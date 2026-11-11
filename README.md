@@ -1,45 +1,38 @@
-# Entorno de virtualización Python
+# TP4 Integrador — Redes de Computadoras (3643)
 
-# Pasos de instalación en Linux:
+## Grupo 14 — Scripts Python y API REST de Cisco Packet Tracer
 
-## 1. Clonación del proyecto
+Este repositorio parte de los scripts suministrados por la cátedra y agrega un script desarrollado por el Grupo 14. El objetivo es consultar la API REST Northbound del **Cisco Network Controller** de Packet Tracer, presentar inventarios de dispositivos y hosts, y exportar la información a un archivo CSV.
 
-Desde la terminal ejecutar:
+El controlador se utiliza en una topología dual stack (IPv4/IPv6) con cuatro routers internos Cisco ISR 4331, dos switches multicapa Cisco 3650 y cinco switches de acceso Cisco 2960. El router ISP simulado pertenece a la red externa y no se incluye entre los dispositivos administrados.
 
-**git clone** <URL_del_repositorio> <nombre_de_la_carpeta_de_destino>
+## Archivos del proyecto
 
-Luego ejecutar **cd** <nombre_de_la_carpeta_de_destino>. Esta carpeta será la raíz de nuestro proyecto en Python.
+| Archivo | Descripción |
+| `src/01_get-ticket.py` | Solicita un ticket de autenticación a la API. La contraseña se ingresa desde la terminal. |
+| `src/02_get-network-device.py` | Consulta `/api/v1/network-device` y muestra los equipos en estado `Managed`, con nombre, modelo e IP de gestión. Solicita el ticket por terminal. |
+| `src/03_get-host.py` | Consulta `/api/v1/host`, elimina registros duplicados para la presentación y lista nombre, IPv4, MAC e interfaz de conexión. Solicita el ticket por terminal. |
+| `src/04_tabulate.py` | Se autentica y presenta tablas de equipos y hosts utilizando la biblioteca `tabulate`. |
+| **`src/05_exportar_inventario.py`** | **Script propio del Grupo 14.** Consulta dispositivos y hosts, filtra los equipos `Managed`, elimina hosts duplicados y genera un CSV consolidado. |
+| `requirements.txt` | Dependencias de Python utilizadas por los scripts. |
+| `.gitignore` | Exclusiones de archivos locales, credenciales y entornos virtuales. |
 
-## 2. Creación del entorno virtual
+1. `01_get-ticket.py` solicita la contraseña del controlador y obtiene un serviceTicket temporal.
+2. `02_get-network-device.py` y `03_get-host.py` solicitan ese ticket por terminal. Si expiró, generar uno nuevo con el primer script.
+3. `04_tabulate.py` y `05_exportar_inventario.py` realizan su propia autenticación solicitando la contraseña por terminal.
+4. Los scripts están preparados para ejecutarse con el usuario de ejemplo `cisco`. Si el usuario del controlador es otro, debe adaptarse el campo `username` en los scripts correspondientes.
 
-Supongamos que el nombre que le damos al entorno virtual es **cisco**, entonces se creará una carpeta **cisco** con todas las librerías y dependencias necesarias paea nuestro proyecto. 
+## Script propio: exportación de inventario a CSV
 
-La manera de realizarlo es la siguiente:
+El archivo `src/05_exportar_inventario.py`
 
-# python3 -m venv <nombre_del_entorno>
-Ejemplo: python3 -m venv cisco
+Su procedimiento es:
 
-Para activar el entorno escribimos **source cisco/bin/activate**, en la carpeta raíz del proyecto. El nombre del entorno virtual aparecerá entre paréntesis ().
+1. Solicitar la contraseña y obtener un ticket de autenticación mediante `POST /api/v1/ticket`.
+2. Consultar los equipos mediante `GET /api/v1/network-device`.
+3. Consultar los hosts mediante `GET /api/v1/host`.
+4. Conservar únicamente los dispositivos de red con estado `Managed`; de este modo, el ISP externo no se incorpora al inventario administrado.
+5. Eliminar los registros duplicados de hosts comparando nombre, IPv4 y MAC.
+6. Crear la carpeta `resultados`, si no existe, y generar `resultados/inventario_grupo14.csv`.
 
-## 3. Instalación de las dependencias, en este caso las librerías requests y tabulate
-
-En la carpeta raíz de nuestro proyecto y dentro del entorno virtual escribimos: **pip install -r requirements.txt**
-
-## 4. Selección del intérprete Python para nuestro entorno virtual
-
-<img width="881" height="118" alt="image" src="https://github.com/user-attachments/assets/18c41d8e-d338-48b6-953c-b2499c57319f" />
-
-<img width="736" height="412" alt="image" src="https://github.com/user-attachments/assets/2a795fcd-2cf8-47ef-a5a6-d21e09ce967f" />
-
-Tal como se ve en la figura seleccionamos Python 3.10.12 (cisco) que se mostrará como entorno recomendado.
-
-## 5. Desactivación del entorno virtual
-
-Simplemente escribimos en la línea de comandos: **deactivate**
-
-
-
-## Antes de ejecutar los scripts
-
-- **Credenciales del controlador:** los scripts usan el usuario `cisco` y la clave `cisco123!`. Si en tu Network Controller creaste otro usuario, cambialos en `01_get-ticket.py` y en `04_tabulate.py`.
-- **Ticket (X-Auth-Token):** `02_get-network-device.py` y `03_get-host.py` traen escrito un ticket de ejemplo que **no va a funcionar** en tu Packet Tracer, porque el controlador genera uno nuevo en cada sesión y vence. Ejecutá primero `01_get-ticket.py`, copiá el ticket que muestra y reemplazalo en el header `X-Auth-Token` de esos dos scripts. `04_tabulate.py` no necesita este paso: pide el ticket solo.
+**Columnas del CSV:** `Categoria`, `Nombre`, `IPv4`, `Modelo` y `MAC`.

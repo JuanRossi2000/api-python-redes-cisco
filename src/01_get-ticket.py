@@ -1,5 +1,6 @@
 import json
 import requests
+import getpass
 api_url = "http://localhost:58000/api/v1/ticket"
 
 headers = {
@@ -8,7 +9,7 @@ headers = {
 
 body_json = {
     "username": "cisco",
-    "password": "cisco123!"
+    "password": getpass.getpass("Contraseña del controlador: ")
 }
 
 resp = requests.post(api_url, json.dumps(body_json), headers=headers)

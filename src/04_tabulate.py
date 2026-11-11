@@ -1,13 +1,14 @@
 #Módulos que se usarán
 import requests #Para entender solicitudes
 import json #Para reconocer el formato json
+import getpass
 from tabulate import * #Para crear tablas
 
 baseUri = "http://localhost:58000/api/v1" #URL de PT
 
 # Llamada al API por el ticket
 headers = {"Content-Type": "application/json"} #Headers
-data = json.dumps({"username": "cisco", "password": "cisco123!"}) #Credenciales
+data = json.dumps({"username": "cisco", "password": getpass.getpass("Contraseña del controlador: ")}) #Credenciales
 resp = requests.post(baseUri+"/ticket", data=data, headers=headers) #URL específica
 
 print("Status de Solicitud:")
@@ -16,8 +17,8 @@ result = resp.json()
 # print(result)
 
 ticket = result["response"]["serviceTicket"] #Printing ticket
-print("\nEl Service Ticket es:")
-print(ticket)
+print("\nAutenticacion exitosa.")
+
 
 
 # Llamada al API para recibir los dispositivos de red
@@ -31,6 +32,8 @@ print("\nDispositivos de Red:")
 host_list=[]
 i=0
 for item in result["response"]:
+    if item.get("collectionStatus") != "Managed" or not item.get("hostname"):
+        continue
     i+=1
     host_list.append([i,item["hostname"],item["serialNumber"],item["softwareVersion"]])
     #print(item["hostname"]+" "+item["serialNumber"]+" "+item["softwareVersion"]) #Lista completa
